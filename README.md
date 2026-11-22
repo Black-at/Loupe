@@ -18,6 +18,11 @@ SDK .NET 8. Version ligne de commande : `dotnet run --project Loupe.Cli -- fichi
 
 Les règles de détection sont dans `Loupe.Core/Regles/regles.json` : elles sont compressées à la compilation pour que Loupe ne contienne pas en clair les motifs qu'il recherche.
 
+## Licence
+Loupe est sous licence [MIT](LICENSE) : tu peux l'utiliser, le modifier et le redistribuer librement, en gardant la mention de copyright.
+
+Bibliothèques utilisées (licence MIT) : [ICSharpCode.Decompiler](https://github.com/icsharpcode/ILSpy) (moteur d'ILSpy), [Iced](https://github.com/icedland/iced), [Microsoft WebView2](https://www.nuget.org/packages/Microsoft.Web.WebView2).
+
 ## Mode d'emploi complet
 
 ```
