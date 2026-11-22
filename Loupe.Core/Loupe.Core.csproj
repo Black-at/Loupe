@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Iced" Version="1.22.0" />
+    <PackageReference Include="ICSharpCode.Decompiler" Version="11.2.0.10050" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.1" />
+  </ItemGroup>
+
+  <!-- Les règles (Regles/regles.json) sont compressées à la compilation puis intégrées au programme. -->
+  <UsingTask TaskName="LoupeDeflate" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Input ParameterType="System.String" Required="true" />
+      <Output ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.IO.Compression" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        Directory.CreateDirectory(Path.GetDirectoryName(Output));
+        using (var input = File.OpenRead(Input))
+        using (var output = File.Create(Output))
+        using (var z = new DeflateStream(output, CompressionLevel.Optimal))
+            input.CopyTo(z);
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="LoupePackRules" BeforeTargets="BeforeBuild" Inputs="Regles/regles.json" Outputs="$(BaseIntermediateOutputPath)regles.bin">
+    <LoupeDeflate Input="$(MSBuildProjectDirectory)/Regles/regles.json" Output="$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)regles.bin" />
+  </Target>
+
+  <ItemGroup>
+    <None Include="Regles/regles.json" />
+    <EmbeddedResource Include="$(BaseIntermediateOutputPath)regles.bin" LogicalName="Loupe.Core.regles.bin" />
+  </ItemGroup>
+
+</Project>

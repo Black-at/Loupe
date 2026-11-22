@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:;">
+<title>Loupe</title>
+<style>
+:root{
+  --bg:#0c0e13;--bg2:#10131a;--sf:#151922;--sf2:#1a1f2b;--sf3:#222837;--bd:#262c3a;--bd2:#313848;
+  --tx:#e8eaf0;--tx2:#a2a9ba;--tx3:#6f7789;--ac:#7b8cff;--ac2:#5d6ef0;--acbg:rgba(123,140,255,.12);
+  --crit:#f04452;--high:#f7782f;--med:#e6b31e;--low:#4d8dff;--info:#7c8496;--ok:#2fbf71;
+  --code:#0e1117;--mono:"Cascadia Mono","Cascadia Code",Consolas,"Courier New",monospace;
+  --k:#c792ea;--s:#a5d6a7;--c:#6b7489;--n:#f7a65c;--t:#82aaff;--f:#7fdbca;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme:light){:root{
+  --bg:#f3f4f7;--bg2:#eceef3;--sf:#ffffff;--sf2:#f6f7fa;--sf3:#eceef3;--bd:#e1e4ea;--bd2:#d3d7e0;
+  --tx:#151922;--tx2:#4f586b;--tx3:#8a92a3;--ac:#4b5ce8;--ac2:#3a4ad4;--acbg:rgba(75,92,232,.09);
+  --code:#fbfbfd;--k:#8e3fd1;--s:#2e7d32;--c:#8a93a3;--n:#c45a00;--t:#1f5fd1;--f:#00796b;--shadow:0 10px 30px rgba(20,25,40,.12);
+}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased;user-select:none}
+input,button,select{font:inherit;color:inherit}
+.sel,code,pre,.mono,td,.ev-t,.str-list{user-select:text}
+button{cursor:pointer}
+svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mono{font-family:var(--mono);font-size:12.5px}
+::-webkit-scrollbar{width:11px;height:11px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:10px;border:3px solid transparent;background-clip:content-box}::-webkit-scrollbar-thumb:hover{background-color:var(--tx3)}::-webkit-scrollbar-corner{background:transparent}
+
+/* ---------- barre du haut ---------- */
+#top{height:52px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--bd);background:var(--bg2)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;font-size:15px;letter-spacing:.2px}
+.logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--ac),#b06cff);display:grid;place-items:center;color:#fff}
+.logo svg{width:17px;height:17px;stroke-width:2.4}
+.brand small{font-weight:400;color:var(--tx3);font-size:12.5px;margin-left:4px}
+#top .sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:8px;border:1px solid var(--bd2);background:var(--sf);color:var(--tx);font-weight:550;font-size:13px;white-space:nowrap;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--sf3)}
+.btn.pri{background:var(--ac2);border-color:var(--ac2);color:#fff}.btn.pri:hover{background:var(--ac)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--tx2)}.btn.ghost:hover{background:var(--sf2);color:var(--tx)}
+.btn.sm{height:28px;padding:0 10px;font-size:12.5px}
+.btn svg.i{width:16px;height:16px}
+.btn:disabled{opacity:.5;cursor:default}
+
+#app{height:calc(100% - 52px);position:relative}
+.view{position:absolute;inset:0;display:none}
+.view.on{display:flex}
+
+/* ---------- accueil ---------- */
+#home{flex-direction:column;align-items:center;overflow:auto;padding:48px 20px}
+.hero{width:100%;max-width:760px}
+#drop{border:2px dashed var(--bd2);border-radius:18px;background:var(--sf);padding:52px 24px;text-align:center;transition:border-color .15s,background .15s,transform .15s}
+#drop.over{border-color:var(--ac);background:var(--acbg);transform:scale(1.01)}
+#drop .big{width:64px;height:64px;border-radius:18px;margin:0 auto 18px;background:var(--acbg);color:var(--ac);display:grid;place-items:center}
+#drop .big svg{width:32px;height:32px;stroke-width:1.6}
+#drop h1{font-size:22px;margin:0 0 6px;font-weight:650}
+#drop p{margin:0 0 20px;color:var(--tx2)}
+.safe{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:18px;color:var(--tx3);font-size:12.5px}
+.safe svg{width:15px;height:15px;color:var(--ok)}
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+.feat{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.feat b{display:flex;align-items:center;gap:8px;font-size:13.5px;margin-bottom:4px}
+.feat b svg{color:var(--ac)}
+.feat span{color:var(--tx2);font-size:12.5px}
+.recent{margin-top:28px}
+.recent h3,.sec-t{font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--tx3);margin:0 0 10px;font-weight:650}
+.rc{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--bd);background:var(--sf);border-radius:10px;margin-bottom:8px;cursor:pointer}
+.rc:hover{border-color:var(--bd2);background:var(--sf2)}
+.rc .nm{flex:1;min-width:0}.rc .nm div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc .nm small{color:var(--tx3)}
+.rc .x{opacity:0;color:var(--tx3);padding:4px;border-radius:6px;border:0;background:none}.rc:hover .x{opacity:1}.rc .x:hover{background:var(--sf3);color:var(--tx)}
+
+/* ---------- progression ---------- */
+#prog{align-items:center;justify-content:center}
+.pcard{width:min(520px,92vw);background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:28px;box-shadow:var(--shadow)}
+.pcard h2{margin:0 0 4px;font-size:17px;word-break:break-all}
+.pcard .st{color:var(--tx2);min-height:21px;margin:14px 0 10px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:8px;background:var(--sf3);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ac2),#b06cff);border-radius:99px;transition:width .3s}
+.pcard .row{display:flex;justify-content:space-between;align-items:center;margin-top:18px;color:var(--tx3);font-size:12.5px}
+
+/* ---------- résultats ---------- */
+#res{flex-direction:row}
+#side{width:228px;flex:none;border-right:1px solid var(--bd);background:var(--bg2);padding:14px 10px;display:flex;flex-direction:column;gap:2px;overflow:auto}
+.fileid{padding:6px 8px 14px;border-bottom:1px solid var(--bd);margin-bottom:10px}
+.fileid .fn{font-weight:650;word-break:break-all;font-size:13.5px}
+.fileid .ty{color:var(--tx3);font-size:12px;margin-top:2px}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--tx2);cursor:pointer;font-weight:550;font-size:13.5px;border:0;background:none;text-align:left;width:100%}
+.nav:hover{background:var(--sf2);color:var(--tx)}
+.nav.on{background:var(--acbg);color:var(--ac)}
+.nav .cnt{margin-left:auto;font-size:11.5px;color:var(--tx3);font-weight:600;background:var(--sf3);border-radius:99px;padding:0 7px;min-width:22px;text-align:center}
+.nav.on .cnt{color:var(--ac)}
+#side .sp{flex:1}
+#side .act{display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px solid var(--bd);margin-top:10px}
+#side .act .btn{justify-content:flex-start}
+#main{flex:1;min-width:0;overflow:auto;padding:24px 28px 40px}
+#main.full{padding:0;overflow:hidden;display:flex}
+.page{max-width:1120px}
+h2.pt{font-size:19px;margin:0 0 4px;font-weight:650}
+.pd{color:var(--tx2);margin:0 0 18px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mt{margin-top:14px}
+
+/* verdict */
+.verdict{display:flex;gap:22px;align-items:center;padding:22px;border-radius:16px;border:1px solid var(--bd);background:var(--sf);position:relative;overflow:hidden}
+.verdict:before{content:"";position:absolute;inset:0;background:radial-gradient(600px 160px at 0 0,var(--vc),transparent 70%);opacity:.13}
+.gauge{width:112px;height:112px;flex:none;position:relative}
+.gauge svg{width:112px;height:112px;transform:rotate(-90deg)}
+.gauge .v{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.gauge .v b{font-size:30px;line-height:1;font-weight:700}
+.gauge .v small{display:block;color:var(--tx3);font-size:11px;margin-top:2px}
+.vt{position:relative}
+.vt .lab{display:inline-flex;align-items:center;gap:8px;font-size:22px;font-weight:700;color:var(--vc)}
+.vt p{margin:6px 0 0;color:var(--tx2);max-width:720px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;background:var(--sf3);font-size:12px;color:var(--tx2);font-weight:550}
+.chip i{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* identité */
+.kv{display:grid;grid-template-columns:150px 1fr;gap:7px 14px;font-size:13px}
+.kv dt{color:var(--tx3)}
+.kv dd{margin:0;word-break:break-word;min-width:0}
+.hash{display:flex;align-items:center;gap:6px}
+.hash code{font-family:var(--mono);font-size:12px;word-break:break-all;color:var(--tx)}
+.icobtn{border:0;background:none;color:var(--tx3);padding:3px;border-radius:6px;display:inline-grid;place-items:center}
+.icobtn:hover{background:var(--sf3);color:var(--tx)}
+.icobtn svg{width:15px;height:15px}
+.quality{display:flex;gap:12px;align-items:flex-start;background:var(--acbg);border:1px solid transparent;border-radius:12px;padding:13px 14px;color:var(--tx);font-size:13px}
+.quality svg{color:var(--ac);margin-top:1px}
+.notes li{margin:3px 0;color:var(--tx2);font-size:13px}
+.notes.warn li{color:var(--high)}
+ul.notes{margin:0;padding-left:18px}
+
+/* indicateurs */
+.sev{display:inline-flex;align-items:center;height:21px;padding:0 9px;border-radius:99px;font-size:11.5px;font-weight:700;letter-spacing:.2px;color:#fff;flex:none}
+.sev.Critique{background:var(--crit)}.sev.Eleve{background:var(--high)}.sev.Moyen{background:var(--med);color:#1d1600}.sev.Faible{background:var(--low)}.sev.Info{background:var(--info)}
+.ind{border:1px solid var(--bd);background:var(--sf);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.ind>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
+.ind>summary::-webkit-details-marker{display:none}
+.ind>summary:hover{background:var(--sf2)}
+.ind .tt{font-weight:600;flex:1;min-width:0}
+.ind .ct{color:var(--tx3);font-size:12px;white-space:nowrap}
+.ind .chev{color:var(--tx3);transition:transform .15s}
+.ind[open] .chev{transform:rotate(90deg)}
+.ind .body{padding:0 14px 14px 14px;border-top:1px solid var(--bd)}
+.ind .ex{color:var(--tx2);margin:12px 0}
+.ev{background:var(--code);border:1px solid var(--bd);border-radius:9px;padding:8px 11px;margin-top:7px}
+.ev .w{color:var(--tx3);font-size:11.5px;display:flex;align-items:center;gap:6px}
+.ev .w a{color:var(--ac);cursor:pointer;text-decoration:none}.ev .w a:hover{text-decoration:underline}
+.ev-t{font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break:break-all;margin-top:3px}
+.ev-t mark{background:rgba(247,120,47,.28);color:inherit;border-radius:3px;padding:0 1px}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.fchip{border:1px solid var(--bd2);background:var(--sf);border-radius:99px;padding:4px 12px;font-size:12.5px;font-weight:550;color:var(--tx2);display:inline-flex;gap:7px;align-items:center}
+.fchip.on{background:var(--acbg);border-color:var(--ac);color:var(--ac)}
+.fchip i{width:8px;height:8px;border-radius:50%}
+.empty{color:var(--tx3);text-align:center;padding:40px 10px}
+.mini{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd);cursor:pointer}
+.mini:last-child{border-bottom:0}
+.mini>span:not(.sev){flex:1;min-width:0}
+.mini:hover>span:not(.sev){color:var(--ac)}
+
+/* code */
+#codev{display:flex;flex:1;min-width:0}
+#tree{width:300px;flex:none;border-right:1px solid var(--bd);display:flex;flex-direction:column;background:var(--bg2)}
+#tree .tb{padding:10px;border-bottom:1px solid var(--bd)}
+.search{display:flex;align-items:center;gap:8px;background:var(--sf);border:1px solid var(--bd2);border-radius:8px;padding:0 10px;height:33px}
+.search:focus-within{border-color:var(--ac)}
+.search input{flex:1;border:0;background:none;outline:none;min-width:0;font-size:13px}
+.search svg{width:15px;height:15px;color:var(--tx3)}
+#tree .list{flex:1;overflow:auto;padding:6px 4px 20px}
+.tn{display:flex;align-items:center;gap:6px;padding:3px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;font-size:13px;color:var(--tx2)}
+.tn:hover{background:var(--sf2);color:var(--tx)}
+.tn.on{background:var(--acbg);color:var(--ac)}
+.tn svg{width:15px;height:15px}
+.tn .nm{overflow:hidden;text-overflow:ellipsis}
+.tn .sz{margin-left:auto;color:var(--tx3);font-size:11px;padding-left:8px}
+.tn.dir{color:var(--tx);font-weight:550}
+.tn .tw{width:14px;display:inline-grid;place-items:center;color:var(--tx3);transition:transform .12s}
+.tn.open .tw{transform:rotate(90deg)}
+#viewer{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--code)}
+#viewer .vh{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--bd);background:var(--sf)}
+#viewer .vh .p{flex:1;min-width:0;font-family:var(--mono);font-size:12.5px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#viewer .vh .search{height:29px;width:230px}
+#viewer .vh .hits{font-size:12px;color:var(--tx3);min-width:52px;text-align:right}
+#viewer .vb{flex:1;overflow:auto;display:flex;align-items:flex-start}
+.gut{padding:12px 10px 40px 14px;text-align:right;color:var(--tx3);font-family:var(--mono);font-size:12.5px;line-height:1.6;white-space:pre;user-select:none;position:sticky;left:0;background:var(--code);border-right:1px solid var(--bd);min-height:100%}
+.src{padding:12px 18px 40px;font-family:var(--mono);font-size:12.5px;line-height:1.6;white-space:pre;margin:0;tab-size:4;flex:1}
+.src mark{background:rgba(230,179,30,.35);color:inherit;border-radius:2px}
+.src mark.cur{background:rgba(247,120,47,.7)}
+.src .hl-line{background:rgba(123,140,255,.14);display:inline-block;width:100%}
+.tk-k{color:var(--k)}.tk-s{color:var(--s)}.tk-c{color:var(--c);font-style:italic}.tk-n{color:var(--n)}.tk-t{color:var(--t)}.tk-f{color:var(--f)}
+.placeholder{margin:auto;text-align:center;color:var(--tx3);padding:40px}
+.placeholder svg{width:42px;height:42px;stroke-width:1.3;margin-bottom:10px}
+.trunc{padding:8px 14px;background:rgba(230,179,30,.12);color:var(--med);font-size:12.5px;border-bottom:1px solid var(--bd)}
+
+/* tableaux et listes */
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{text-align:left;color:var(--tx3);font-weight:600;font-size:12px;padding:7px 10px;border-bottom:1px solid var(--bd);position:sticky;top:0;background:var(--sf)}
+table.t td{padding:7px 10px;border-bottom:1px solid var(--bd);vertical-align:top}
+table.t tr:last-child td{border-bottom:0}
+.ent{display:flex;align-items:center;gap:8px}
+.ent .b{width:90px;height:6px;background:var(--sf3);border-radius:99px;overflow:hidden}
+.ent .b i{display:block;height:100%;border-radius:99px}
+.lst{max-height:420px;overflow:auto}
+.lst .li{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid var(--bd);font-family:var(--mono);font-size:12.5px;word-break:break-all}
+.lst .li:last-child{border-bottom:0}
+.lst .li span{flex:1}
+details.imp{border-bottom:1px solid var(--bd)}
+details.imp summary{padding:8px 4px;cursor:pointer;font-family:var(--mono);font-size:12.5px;display:flex;gap:8px}
+details.imp summary small{color:var(--tx3)}
+details.imp div{padding:0 4px 10px 18px;font-family:var(--mono);font-size:12px;color:var(--tx2);line-height:1.7;word-break:break-all}
+.api-sus{color:var(--high);font-weight:600}
+.str-list{font-family:var(--mono);font-size:12.5px;line-height:1.65}
+.str-list div{padding:1px 4px;border-bottom:1px solid transparent;white-space:pre-wrap;word-break:break-all}
+.str-list div:nth-child(odd){background:var(--sf2)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--bd);margin-bottom:14px}
+.tab{padding:8px 12px;border:0;background:none;color:var(--tx2);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;font-size:13px}
+.tab.on{color:var(--ac);border-bottom-color:var(--ac)}
+
+/* modale + toast */
+#modal{position:fixed;inset:0;background:rgba(5,7,12,.55);display:none;align-items:center;justify-content:center;z-index:50;backdrop-filter:blur(2px)}
+#modal.on{display:flex}
+.mbox{width:min(560px,94vw);background:var(--sf);border:1px solid var(--bd2);border-radius:16px;box-shadow:var(--shadow);padding:22px}
+.mbox h3{margin:0 0 4px;font-size:17px}
+.fld{margin-top:16px}
+.fld label{display:block;font-weight:600;font-size:13px;margin-bottom:2px}
+.fld small{display:block;color:var(--tx3);margin-bottom:7px;font-size:12.5px}
+.fld .row{display:flex;gap:8px}
+.fld input[type=text]{flex:1;height:34px;border:1px solid var(--bd2);border-radius:8px;background:var(--bg2);padding:0 10px;outline:none;min-width:0;font-size:13px}
+.fld input[type=text]:focus{border-color:var(--ac)}
+.chk{display:flex;gap:10px;align-items:flex-start;margin-top:16px;font-size:13px}
+.chk input{margin-top:3px;accent-color:var(--ac)}
+.mact{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--sf3);border:1px solid var(--bd2);color:var(--tx);padding:9px 16px;border-radius:10px;box-shadow:var(--shadow);transition:.2s;z-index:60;pointer-events:none;font-size:13px}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{border-color:var(--crit)}
+@media (max-width:860px){.grid2,.feats{grid-template-columns:1fr}#side{width:190px}#tree{width:220px}}
+</style>
+</head>
+<body>
+<div id="top">
+  <div class="brand"><div class="logo"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></svg></div>Loupe<small id="ver"></small></div>
+  <div class="sp"></div>
+  <button class="btn ghost" id="bNew" style="display:none"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouvelle analyse</button>
+  <button class="btn ghost" id="bSet" title="Réglages"><svg class="i" viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>Réglages</button>
+</div>
+
+<div id="app">
+  <!-- accueil -->
+  <section class="view on" id="home">
+    <div class="hero">
+      <div id="drop">
+        <div class="big"><svg class="i" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M12 11v6M9 14l3-3 3 3"/></svg></div>
+        <h1>Glisse un programme ici</h1>
+        <p>.exe, .dll, programme Python ou .NET… Loupe l'analyse et le décompile.</p>
+        <button class="btn pri" id="bPick"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>Choisir un fichier</button>
+        <div class="safe"><svg class="i" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>Le fichier est seulement lu : il n'est jamais lancé.</div>
+      </div>
+      <div class="feats">
+        <div class="feat"><b><svg class="i" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>Verdict de sécurité</b><span>Vol de mots de passe, tokens Discord, rançongiciel, porte dérobée…</span></div>
+        <div class="feat"><b><svg class="i" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>Décompilation</b><span>C# pour .NET, Python pour PyInstaller, assembleur et pseudo-C pour le natif.</span></div>
+        <div class="feat"><b><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Réseau et système</b><span>Adresses contactées, commandes, registre, démarrage automatique.</span></div>
+      </div>
+      <div class="recent" id="recent"></div>
+    </div>
+  </section>
+
+  <!-- progression -->
+  <section class="view" id="prog">
+    <div class="pcard">
+      <div class="sec-t">Analyse en cours</div>
+      <h2 id="pName"></h2>
+      <div class="st" id="pStep">Préparation…</div>
+      <div class="bar"><i id="pBar"></i></div>
+      <div class="row"><span id="pPct">0 %</span><button class="btn sm" id="bCancel">Annuler</button></div>
+    </div>
+  </section>
+
+  <!-- résultats -->
+  <section class="view" id="res">
+    <aside id="side">
+      <div class="fileid"><div class="fn" id="sName"></div><div class="ty" id="sType"></div></div>
+      <button class="nav" data-p="sum"><svg class="i" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>Résumé</button>
+      <button class="nav" data-p="ind"><svg class="i" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h0"/></svg>Comportements<span class="cnt" id="cInd"></span></button>
+      <button class="nav" data-p="code"><svg class="i" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>Code source<span class="cnt" id="cCode"></span></button>
+      <button class="nav" data-p="net"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Réseau &amp; système<span class="cnt" id="cNet"></span></button>
+      <button class="nav" data-p="str"><svg class="i" viewBox="0 0 24 24"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg>Textes<span class="cnt" id="cStr"></span></button>
+      <button class="nav" data-p="pe"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>Structure</button>
+      <button class="nav" data-p="files"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>Fichiers extraits<span class="cnt" id="cFiles"></span></button>
+      <div class="sp"></div>
+      <div class="act">
+        <button class="btn sm" id="bFolder"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>Ouvrir le dossier</button>
+        <button class="btn sm" id="bReport"><svg class="i" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h4"/></svg>Rapport HTML</button>
+        <button class="btn sm" id="bVT"><svg class="i" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>Voir sur VirusTotal</button>
+      </div>
+    </aside>
+    <div id="main"></div>
+  </section>
+</div>
+
+<div id="modal"><div class="mbox" id="mbox"></div></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ================= liaison avec le programme Windows ================= */
+const W = window.chrome && window.chrome.webview;
+const host = {
+  post(msg){ if (W) W.postMessage(msg); else if (window.__mockHost) window.__mockHost(msg); },
+};
+const $ = id => document.getElementById(id);
+const S = { result:null, settings:{}, recents:[], page:"sum", tree:null, openDirs:new Set(["code-source"]), file:null, fileText:"", strings:null, sevFilter:null, busy:false };
+
+/* ---------- échappement : TOUT ce qui vient du fichier analysé passe par esc() ---------- */
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function el(tag, attrs, html){ const e=document.createElement(tag); if(attrs) for(const k in attrs) e.setAttribute(k, attrs[k]); if(html!=null) e.innerHTML=html; return e; }
+function size(n){ const u=["o","Ko","Mo","Go"]; let i=0; while(n>=1024&&i<3){n/=1024;i++} return (i?n.toFixed(n<10?1:0):n)+" "+u[i]; }
+function toast(t, err){ const e=$("toast"); e.textContent=t; e.className="on"+(err?" err":""); clearTimeout(toast.t); toast.t=setTimeout(()=>e.className="",2600); }
+function copy(t){ host.post({cmd:"copy", text:String(t)}); toast("Copié dans le presse-papiers"); }
+
+const IC = {
+  file:'<path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/>',
+  code:'<path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="m10 13-2 2 2 2M14 13l2 2-2 2"/>',
+  dir:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+  bin:'<path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 12v4M15 12v4M12 12h0M12 16h0"/>',
+  copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  chev:'<path d="m9 6 6 6-6 6"/>', search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h0"/>', ext:'<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  ok:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>', warn:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h0"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+};
+const ic = (n, cls) => `<svg class="i ${cls||""}" viewBox="0 0 24 24">${IC[n]}</svg>`;
+
+const SEV = { Critique:{l:"Critique",c:"var(--crit)",o:4}, Eleve:{l:"Élevé",c:"var(--high)",o:3}, Moyen:{l:"Moyen",c:"var(--med)",o:2}, Faible:{l:"Faible",c:"var(--low)",o:1}, Info:{l:"Info",c:"var(--info)",o:0} };
+const VC = { danger:"var(--crit)", suspect:"var(--high)", attention:"var(--med)", ok:"var(--ok)" };
+
+/* ================= navigation entre écrans ================= */
+function show(v){ for (const s of document.querySelectorAll(".view")) s.classList.toggle("on", s.id===v); $("bNew").style.display = v==="res" ? "" : "none"; }
+
+/* ================= accueil ================= */
+function renderRecents(){
+  const box = $("recent");
+  if (!S.recents.length){ box.innerHTML=""; return; }
+  box.innerHTML = '<h3>Analyses récentes</h3>' + S.recents.map((r,i)=>`
+    <div class="rc" data-i="${i}">
+      <span class="sev ${r.level==="danger"?"Critique":r.level==="suspect"?"Eleve":r.level==="attention"?"Moyen":"Info"}" style="${r.level==="ok"?"background:var(--ok)":""}">${esc(r.verdict)}</span>
+      <div class="nm"><div>${esc(r.name)}</div><small>${esc(r.date)} · ${esc(r.kind||"")}</small></div>
+      <button class="x" data-del="${i}" title="Retirer de la liste">${ic("x")}</button>
+    </div>`).join("");
+  box.onclick = e => {
+    const d = e.target.closest("[data-del]");
+    if (d){ e.stopPropagation(); host.post({cmd:"removeRecent", index:+d.dataset.del}); return; }
+    const r = e.target.closest(".rc"); if (r) host.post({cmd:"openRecent", index:+r.dataset.i});
+  };
+}
+
+const drop = $("drop");
+["dragenter","dragover"].forEach(t => document.addEventListener(t, e => { e.preventDefault(); if (!S.busy) drop.classList.add("over"); }));
+["dragleave","drop"].forEach(t => document.addEventListener(t, e => { if (t==="dragleave" && e.relatedTarget) return; drop.classList.remove("over"); }));
+document.addEventListener("drop", e => {
+  e.preventDefault();
+  if (S.busy) return;
+  const files = e.dataTransfer && e.dataTransfer.files;
+  if (!files || !files.length) return;
+  if (W && W.postMessageWithAdditionalObjects) W.postMessageWithAdditionalObjects("drop", files);
+  else host.post({cmd:"dropName", name:files[0].name});
+});
+$("bPick").onclick = () => host.post({cmd:"pick"});
+$("bNew").onclick = () => { S.result=null; show("home"); host.post({cmd:"init"}); };
+$("bCancel").onclick = () => { host.post({cmd:"cancel"}); $("pStep").textContent="Annulation…"; };
+
+/* ================= résultats ================= */
+function openResult(r){
+  S.result = r; S.tree = null; S.file = null; S.strings = null; S.sevFilter = null; S.openDirs = new Set(["code-source"]);
+  $("sName").textContent = r.fileName;
+  $("sType").textContent = r.kindLabel;
+  $("cInd").textContent = r.indicators.filter(i=>i.severity!=="Info").length || "";
+  const codeFiles = r.files.filter(f => isCodePath(f.path)).length;
+  $("cCode").textContent = codeFiles || "";
+  $("cNet").textContent = (r.domains.length + r.ips.length) || "";
+  $("cStr").textContent = r.stringCount ? (r.stringCount>999? Math.round(r.stringCount/1000)+"k" : r.stringCount) : "";
+  $("cFiles").textContent = r.files.length || "";
+  show("res");
+  go("sum");
+}
+for (const b of document.querySelectorAll(".nav")) b.onclick = () => go(b.dataset.p);
+function go(p){
+  S.page = p;
+  for (const b of document.querySelectorAll(".nav")) b.classList.toggle("on", b.dataset.p===p);
+  const m = $("main"); m.className = p==="code" ? "full" : ""; m.scrollTop = 0;
+  ({sum:pSum, ind:pInd, code:pCode, net:pNet, str:pStr, pe:pPe, files:pFiles})[p]();
+}
+$("bFolder").onclick = () => host.post({cmd:"openFolder"});
+$("bReport").onclick = () => host.post({cmd:"openReport"});
+$("bVT").onclick = () => host.post({cmd:"virustotal"});
+
+/* ---------- résumé ---------- */
+function pSum(){
+  const r = S.result, vc = VC[r.verdictLevel] || "var(--info)";
+  const counts = {}; r.indicators.forEach(i => counts[i.severity]=(counts[i.severity]||0)+1);
+  const circ = 2*Math.PI*48, off = circ*(1-r.score/100);
+  const sig = r.pe.signature;
+  const vi = r.pe.versionInfo || {};
+  const top = r.indicators.filter(i => i.severity!=="Info").slice(0,6);
+  $("main").innerHTML = `<div class="page">
+    <div class="verdict" style="--vc:${vc}">
+      <div class="gauge"><svg viewBox="0 0 112 112"><circle cx="56" cy="56" r="48" stroke="var(--sf3)" stroke-width="10" fill="none"/>
+        <circle cx="56" cy="56" r="48" stroke="${vc}" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${off}"/></svg>
+        <div class="v"><div><b>${r.score}</b><small>risque / 100</small></div></div></div>
+      <div class="vt"><div class="lab">${ic(r.verdictLevel==="ok"?"ok":"warn")}${esc(r.verdict)}</div><p>${esc(r.verdictText)}</p>
+        <div class="chips">${["Critique","Eleve","Moyen","Faible"].map(s=>`<span class="chip"><i style="background:${SEV[s].c}"></i>${counts[s]||0} ${SEV[s].l.toLowerCase()}</span>`).join("")}</div></div>
+    </div>
+    <div class="grid2 mt">
+      <div class="card"><div class="sec-t">Identité du fichier</div><dl class="kv">
+        <dt>Type</dt><dd>${esc(r.kindLabel)}</dd>
+        <dt>Langage</dt><dd>${esc(r.language||"—")}</dd>
+        ${r.kindDetails.length?`<dt>Détails</dt><dd>${r.kindDetails.map(esc).join("<br>")}</dd>`:""}
+        <dt>Taille</dt><dd>${size(r.fileSize)}</dd>
+        ${r.pe.isPe?`<dt>Architecture</dt><dd>${esc(r.pe.machine)} · ${esc(r.pe.subsystem)}${r.pe.isDll?" · DLL":""}</dd><dt>Compilé le</dt><dd>${esc(r.pe.compiledAt)}</dd>`:""}
+        <dt>Signature</dt><dd>${sig.present?esc(sig.signer||"?")+` <span style="color:var(--tx3)">(${esc(sig.status)})</span>`:'<span style="color:var(--tx3)">aucune</span>'}</dd>
+        ${vi.CompanyName?`<dt>Éditeur</dt><dd>${esc(vi.CompanyName)}</dd>`:""}
+        ${vi.FileDescription?`<dt>Description</dt><dd>${esc(vi.FileDescription)}</dd>`:""}
+        ${vi.FileVersion?`<dt>Version</dt><dd>${esc(vi.FileVersion)}</dd>`:""}
+      </dl></div>
+      <div class="card"><div class="sec-t">Empreintes</div><dl class="kv">
+        ${["sha256","sha1","md5"].map(h=>`<dt>${h.toUpperCase().replace("SHA","SHA-")}</dt><dd class="hash"><code>${esc(r.hashes[h])}</code><button class="icobtn" data-copy="${esc(r.hashes[h])}" title="Copier">${ic("copy")}</button></dd>`).join("")}
+      </dl>
+      <div class="quality mt">${ic("code")}<div><b>Décompilation</b><br>${esc(r.decompileQuality)}</div></div></div>
+    </div>
+    <div class="grid2 mt">
+      <div class="card"><div class="sec-t">Points principaux</div>
+        ${top.length? top.map((i,k)=>`<div class="mini" data-ind="${r.indicators.indexOf(i)}"><span class="sev ${i.severity}">${SEV[i.severity].l}</span><span>${esc(i.title)}</span>${ic("chev")}</div>`).join("") : '<div class="empty" style="padding:18px">Aucun comportement notable.</div>'}
+      </div>
+      <div class="card"><div class="sec-t">Ce que Loupe a fait</div>
+        <ul class="notes">${r.notes.map(n=>`<li>${esc(n)}</li>`).join("")||"<li>Analyse de la structure et des textes.</li>"}</ul>
+        ${r.warnings.length?`<ul class="notes warn mt">${r.warnings.map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}
+        <div style="color:var(--tx3);font-size:12px;margin-top:10px">Analyse en ${r.seconds} s · ${r.files.length} fichiers produits</div>
+      </div>
+    </div></div>`;
+  bindCommon();
+  for (const m of document.querySelectorAll(".mini")) m.onclick = () => { go("ind"); const d=document.querySelector(`details[data-k="${m.dataset.ind}"]`); if(d){ d.open=true; d.scrollIntoView({block:"center"}); } };
+}
+function bindCommon(){
+  for (const b of document.querySelectorAll("[data-copy]")) b.onclick = e => { e.stopPropagation(); copy(b.dataset.copy); };
+}
+
+/* ---------- comportements ---------- */
+function pInd(){
+  const r = S.result;
+  const list = r.indicators.filter(i => !S.sevFilter || i.severity===S.sevFilter);
+  const counts = {}; r.indicators.forEach(i => counts[i.severity]=(counts[i.severity]||0)+1);
+  $("main").innerHTML = `<div class="page">
+    <h2 class="pt">Comportements repérés</h2>
+    <p class="pd">Chaque point indique ce que le programme <i>sait faire</i> d'après son contenu. Un seul point « Moyen » n'est pas grave en soi : c'est la combinaison qui compte.</p>
+    <div class="filters"><button class="fchip ${!S.sevFilter?"on":""}" data-f="">Tous (${r.indicators.length})</button>
+      ${["Critique","Eleve","Moyen","Faible","Info"].filter(s=>counts[s]).map(s=>`<button class="fchip ${S.sevFilter===s?"on":""}" data-f="${s}"><i style="background:${SEV[s].c}"></i>${SEV[s].l} (${counts[s]})</button>`).join("")}</div>
+    ${list.length ? list.map(i => { const k=r.indicators.indexOf(i); return `
+      <details class="ind" data-k="${k}">
+        <summary><span class="sev ${i.severity}">${SEV[i.severity].l}</span><span class="tt">${esc(i.title)}</span><span class="ct">${esc(i.category)}${i.hits?" · "+i.hits+" trouvé"+(i.hits>1?"s":""):""}</span>${ic("chev","chev")}</summary>
+        <div class="body"><div class="ex">${esc(i.explanation)}</div>
+          ${i.evidence.map(ev=>`<div class="ev"><div class="w">${esc(ev.where)}${fileLink(ev.where)}</div><div class="ev-t">${esc(ev.text)}</div></div>`).join("")}
+        </div>
+      </details>`; }).join("") : '<div class="empty">Rien dans cette catégorie.</div>'}
+  </div>`;
+  for (const b of document.querySelectorAll(".fchip")) b.onclick = () => { S.sevFilter = b.dataset.f || null; pInd(); };
+  for (const a of document.querySelectorAll("[data-open]")) a.onclick = e => { e.preventDefault(); openFileAt(a.dataset.open, +a.dataset.line||0); };
+}
+function fileLink(where){
+  const m = /^(.+?)(?: \(ligne (\d+)\))?$/.exec(where);
+  if (!m || !S.result.files.some(f => f.path===m[1])) return "";
+  return ` · <a data-open="${esc(m[1])}" data-line="${m[2]||0}">ouvrir</a>`;
+}
+
+/* ---------- code source ---------- */
+const CODE_EXT = /\.(cs|vb|fs|py|js|ts|json|xml|html?|css|txt|config|ini|ps1|psm1|bat|cmd|vbs|resx|xaml|c|h|cpp|asm|au3|csproj|manifest|sql|ya?ml|md|lua|reg|hta|wsf|sh|dis\.txt)$/i;
+function realName(p){ return p.replace(/\.(bin|txt)$/i, (m, x, off, s) => /\.(exe|dll|scr|com|pif|cpl|msi|sys|ocx|lnk|jar|msp|appx|msix|bat|cmd|vbs|vbe|js|jse|wsf|wsh|ps1|psm1|hta|reg|py|pyw|au3|url)$/i.test(s.slice(0, off)) ? "" : m); }
+function isCodePath(p){ return /^(code-source|assembleur)\//.test(p) || (/^(python-extrait\/scripts-principaux|ressources|fichiers-integres)\//.test(p) && CODE_EXT.test(realName(p))); }
+function buildTree(filter){
+  const root = {name:"", dirs:{}, files:[]};
+  const q = (filter||"").toLowerCase();
+  for (const f of S.result.files){
+    if (q && !f.path.toLowerCase().includes(q)) continue;
+    const parts = f.path.split("/"); let n = root;
+    for (let i=0;i<parts.length-1;i++){ const p=parts[i]; n = n.dirs[p] || (n.dirs[p] = {name:p, path:parts.slice(0,i+1).join("/"), dirs:{}, files:[]}); }
+    n.files.push(f);
+  }
+  return root;
+}
+const DIR_ORDER = ["code-source","assembleur","python-extrait","fichiers-integres","ressources","contenu-archive","decompresse","donnees-ajoutees"];
+function renderTree(){
+  const filter = $("tq") ? $("tq").value : "";
+  const t = buildTree(filter);
+  const out = [];
+  const walk = (n, depth) => {
+    const dirs = Object.values(n.dirs).sort((a,b) => { const ia=DIR_ORDER.indexOf(a.name), ib=DIR_ORDER.indexOf(b.name); if (depth===0 && (ia>=0||ib>=0)) return (ia<0?99:ia)-(ib<0?99:ib); return a.name.localeCompare(b.name); });
+    for (const d of dirs){
+      const open = filter || S.openDirs.has(d.path);
+      out.push(`<div class="tn dir ${open?"open":""}" data-dir="${esc(d.path)}" style="padding-left:${8+depth*14}px"><span class="tw">${ic("chev")}</span>${ic("dir")}<span class="nm">${esc(d.name)}</span></div>`);
+      if (open) walk(d, depth+1);
+    }
+    for (const f of n.files.sort((a,b)=>a.path.localeCompare(b.path))){
+      const nm = f.path.split("/").pop(), code = CODE_EXT.test(realName(nm));
+      out.push(`<div class="tn ${S.file===f.path?"on":""}" data-f="${esc(f.path)}" style="padding-left:${22+depth*14}px">${ic(code?"code":nm.endsWith(".bin")?"bin":"file")}<span class="nm">${esc(nm)}</span><span class="sz">${size(f.size)}</span></div>`);
+    }
+  };
+  walk(t, 0);
+  $("tl").innerHTML = out.join("") || '<div class="empty">Aucun fichier.</div>';
+}
+function pCode(){
+  $("main").innerHTML = `<div id="codev">
+    <div id="tree"><div class="tb"><div class="search">${ic("search")}<input id="tq" placeholder="Filtrer les fichiers…" spellcheck="false"></div></div><div class="list" id="tl"></div></div>
+    <div id="viewer"><div class="placeholder">${ic("code")}<div>Choisis un fichier à gauche.</div><div style="font-size:12.5px;margin-top:4px">Le code décompilé est dans <b>code-source</b>.</div></div></div>
+  </div>`;
+  $("tq").oninput = renderTree;
+  $("tl").onclick = e => {
+    const d = e.target.closest("[data-dir]");
+    if (d){ const p=d.dataset.dir; S.openDirs.has(p)?S.openDirs.delete(p):S.openDirs.add(p); renderTree(); return; }
+    const f = e.target.closest("[data-f]"); if (f) openFileAt(f.dataset.f, 0, true);
+  };
+  renderTree();
+  if (S.file) requestFile(S.file, S.fileLine||0);
+  else { const first = S.result.files.find(f => /^code-source\/.*\.(cs|py|c|dis\.txt)$/i.test(f.path) && !/AssemblyInfo\.cs$/.test(f.path)) || S.result.files.find(f => isCodePath(f.path)); if (first){ expandTo(first.path); renderTree(); requestFile(first.path, 0); } }
+}
+function expandTo(p){ const parts=p.split("/"); for (let i=1;i<parts.length;i++) S.openDirs.add(parts.slice(0,i).join("/")); }
+function openFileAt(path, line, fromTree){
+  S.file = path; S.fileLine = line;
+  if (S.page !== "code"){ expandTo(path); go("code"); return; }
+  if (!fromTree){ expandTo(path); }
+  renderTree();
+  requestFile(path, line);
+}
+function requestFile(path, line){
+  S.file = path; S.fileLine = line;
+  $("viewer").innerHTML = `<div class="placeholder"><div>Chargement…</div></div>`;
+  host.post({cmd:"readFile", path});
+}
+function langOf(p){
+  const n = realName(p).toLowerCase();
+  if (/\.(cs|java)$/.test(n)) return "cs"; if (/\.(js|ts|json)$/.test(n)) return "js"; if (/\.py$/.test(n)) return "py";
+  if (/\.(c|h|cpp)$/.test(n)) return "c"; if (/\.asm$/.test(n)) return "asm"; if (/\.dis\.txt$/.test(n)) return "dis"; if (/\.(xml|html?|xaml|csproj|manifest|resx|config)$/.test(n)) return "xml";
+  if (/\.ps1$/.test(n)) return "ps"; if (/\.(bat|cmd)$/.test(n)) return "bat"; if (/\.vb$/.test(n)) return "vb"; return "";
+}
+const KW = {
+  cs:"abstract as async await base bool break byte case catch char checked class const continue decimal default delegate do double else enum event explicit extern false finally fixed float for foreach goto if implicit in int interface internal is lock long namespace new null object operator out override params private protected public readonly ref return sbyte sealed short sizeof stackalloc static string struct switch this throw true try typeof uint ulong unchecked unsafe ushort using var virtual void volatile while get set value yield record init when nameof",
+  js:"async await break case catch class const continue debugger default delete do else export extends false finally for function if import in instanceof let new null return super switch this throw true try typeof undefined var void while with yield of",
+  py:"and as assert async await break class continue def del elif else except False finally for from global if import in is lambda None nonlocal not or pass raise return True try while with yield self",
+  c:"auto break case char const continue default do double else enum extern float for goto if int long register return short signed sizeof static struct switch typedef union unsigned void volatile while bool true false NULL undefined1 undefined2 undefined4 undefined8 uint ulong ushort byte code",
+  ps:"begin break catch class continue data do else elseif end exit filter finally for foreach function if in param process return switch throw trap try until while",
+  vb:"and as boolean byval byref call case catch class const dim do each else elseif end enum exit false for function get if imports in inherits integer is loop me module new next not nothing of or private property protected public return select set shared string sub then to true try using while with",
+  bat:"echo set if else goto call exit for in do not exist defined errorlevel start del rmdir copy move cd pushd popd setlocal endlocal",
+};
+const KWS = {}; for (const k in KW) KWS[k] = new Set(KW[k].split(" "));
+function highlight(lang, text){
+  if (!lang || text.length > 1_500_000) return esc(text);
+  if (lang==="xml") return esc(text).replace(/(&lt;!--[\s\S]*?--&gt;)|(&lt;\/?)([\w:.-]+)|([\w:.-]+)(=)(&quot;[^&]*?&quot;)/g, (m,c,a,b,k,eq,v) => c?`<span class="tk-c">${c}</span>`: a?`${a}<span class="tk-k">${b}</span>` : `<span class="tk-t">${k}</span>${eq}<span class="tk-s">${v}</span>`);
+  if (lang==="asm"||lang==="dis") return text.split("\n").map(l => {
+    if (/^\s*[;#]/.test(l)) return `<span class="tk-c">${esc(l)}</span>`;
+    return esc(l).replace(/\b(0x[0-9a-f]+|[0-9A-F]{8,16})\b/gi,'<span class="tk-n">$1</span>').replace(/\b([A-Z_]{3,}[A-Z0-9_]*)\b/g,'<span class="tk-k">$1</span>').replace(/(\(.*?\))/g,'<span class="tk-s">$1</span>');
+  }).join("\n");
+  const kw = KWS[lang] || new Set();
+  const lineC = lang==="py"||lang==="ps" ? "#" : lang==="bat" ? "(?:rem |::)" : lang==="vb" ? "'" : "//";
+  const re = new RegExp(
+    (lang==="py" ? `("""[\\s\\S]*?"""|'''[\\s\\S]*?''')|` : `(\\/\\*[\\s\\S]*?\\*\\/)|`) +
+    `(${lineC}[^\\n]*)|` +
+    `(@"(?:[^"]|"")*"|\\$?"(?:[^"\\\\\\n]|\\\\.)*"|'(?:[^'\\\\\\n]|\\\\.)*'|\`(?:[^\`\\\\]|\\\\.)*\`)|` +
+    `(\\b0x[0-9a-fA-F]+\\b|\\b\\d+(?:\\.\\d+)?[fFdDmMuUlL]?\\b)|` +
+    `([A-Za-z_][\\w]*)(?=\\s*\\()|` +
+    `([A-Za-z_][\\w]*)`, "g");
+  let out = "", last = 0, m;
+  while ((m = re.exec(text))){
+    out += esc(text.slice(last, m.index)); last = re.lastIndex;
+    const v = m[0];
+    if (m[1]) out += `<span class="tk-${lang==="py"?"s":"c"}">${esc(v)}</span>`;
+    else if (m[2]) out += `<span class="tk-c">${esc(v)}</span>`;
+    else if (m[3]) out += `<span class="tk-s">${esc(v)}</span>`;
+    else if (m[4]) out += `<span class="tk-n">${esc(v)}</span>`;
+    else if (m[5]) out += kw.has(lang==="vb"||lang==="bat"?v.toLowerCase():v) ? `<span class="tk-k">${esc(v)}</span>` : `<span class="tk-f">${esc(v)}</span>`;
+    else out += kw.has(lang==="vb"||lang==="bat"?v.toLowerCase():v) ? `<span class="tk-k">${esc(v)}</span>` : /^[A-Z]/.test(v) && lang!=="py" ? `<span class="tk-t">${esc(v)}</span>` : esc(v);
+    if (re.lastIndex === m.index) re.lastIndex++;
+  }
+  return out + esc(text.slice(last));
+}
+function showFile(msg){
+  if (S.page !== "code" || msg.path !== S.file) return;
+  const v = $("viewer");
+  if (msg.error){ v.innerHTML = `<div class="placeholder">${ic("warn")}<div>${esc(msg.error)}</div></div>`; return; }
+  S.fileText = String(msg.content).replace(/\r\n?/g, "\n");
+  v.innerHTML = `<div class="vh"><div class="p" title="${esc(msg.path)}">${esc(msg.path)}</div>
+    <span class="hits" id="vhits"></span><div class="search">${ic("search")}<input id="vq" placeholder="Rechercher…" spellcheck="false"></div>
+    <button class="btn sm ghost" id="vcopy" title="Copier tout le fichier">${ic("copy")}</button>
+    <button class="btn sm ghost" id="vext" title="Afficher dans l'explorateur">${ic("ext")}</button></div>
+    ${msg.binary?`<div class="trunc">Fichier binaire : aperçu hexadécimal des ${size(msg.shown)} premiers octets (${size(msg.size)} au total).</div>`:msg.truncated?`<div class="trunc">Fichier long : seuls les ${size(msg.shown)} premiers sont affichés (${size(msg.size)} au total). Ouvre-le depuis le dossier pour tout voir.</div>`:""}
+    <div class="vb" id="vb"><div class="gut" id="vg"></div><pre class="src sel" id="vs"></pre></div>`;
+  renderSource();
+  $("vq").oninput = () => renderSource($("vq").value);
+  $("vq").onkeydown = e => { if (e.key==="Enter"){ e.preventDefault(); nextHit(e.shiftKey?-1:1); } };
+  $("vcopy").onclick = () => copy(S.fileText);
+  $("vext").onclick = () => host.post({cmd:"openFolder", path:msg.path});
+}
+let HITS = [], HIT = -1;
+function renderSource(q){
+  const text = S.fileText, lines = text.split("\n").length;
+  let g = ""; for (let i=1;i<=lines;i++) g += i + "\n";
+  $("vg").textContent = g;
+  const vs = $("vs");
+  if (q && q.length >= 2){
+    const low = text.toLowerCase(), ql = q.toLowerCase(); let out="", last=0, i, n=0;
+    while ((i = low.indexOf(ql, last)) >= 0 && n < 5000){ out += esc(text.slice(last, i)) + `<mark>${esc(text.slice(i, i+q.length))}</mark>`; last = i + q.length; n++; }
+    vs.innerHTML = out + esc(text.slice(last));
+    HITS = [...vs.querySelectorAll("mark")]; HIT = -1;
+    $("vhits").textContent = n ? n + (n>=5000?"+":"") + " trouvé" + (n>1?"s":"") : "aucun";
+    if (n) nextHit(1);
+  } else {
+    vs.innerHTML = highlight(langOf(S.file), text);
+    HITS = []; $("vhits").textContent = "";
+    if (S.fileLine > 1) scrollToLine(S.fileLine);
+  }
+}
+function nextHit(d){ if (!HITS.length) return; if (HIT>=0) HITS[HIT].classList.remove("cur"); HIT = (HIT + d + HITS.length) % HITS.length; HITS[HIT].classList.add("cur"); HITS[HIT].scrollIntoView({block:"center"}); $("vhits").textContent = (HIT+1)+" / "+HITS.length; }
+function scrollToLine(n){
+  const vb = $("vb"), lh = parseFloat(getComputedStyle($("vs")).lineHeight) || 20;
+  vb.scrollTop = Math.max(0, (n-1)*lh - vb.clientHeight/3);
+  const lines = S.fileText.split("\n");
+  if (n-1 < lines.length){
+    const before = lines.slice(0, n-1).join("\n"), cur = lines[n-1], after = lines.slice(n).join("\n");
+    const lang = langOf(S.file);
+    $("vs").innerHTML = highlight(lang, before) + (n>1?"\n":"") + `<span class="hl-line">${highlight(lang, cur)}</span>` + (after?"\n"+highlight(lang, after):"");
+  }
+}
+
+/* ---------- réseau et système ---------- */
+function pNet(){
+  const r = S.result;
+  const block = (title, items, desc, max) => `<div class="card mt"><div class="sec-t">${title} (${items.length})</div>${desc?`<div style="color:var(--tx2);font-size:12.5px;margin:-4px 0 8px">${desc}</div>`:""}
+    ${items.length?`<div class="lst">${items.slice(0,max||1000).map(x=>`<div class="li"><span>${esc(x)}</span><button class="icobtn" data-copy="${esc(x)}">${ic("copy")}</button></div>`).join("")}</div>`:'<div style="color:var(--tx3)">Rien trouvé.</div>'}</div>`;
+  $("main").innerHTML = `<div class="page"><h2 class="pt">Réseau &amp; système</h2><p class="pd">Adresses, commandes et clés de registre écrites dans le programme. Leur présence ne veut pas dire qu'elles sont utilisées.</p>
+    <div class="grid2">${block("Domaines", r.domains, "Noms de sites trouvés dans les adresses web.")}${block("Adresses IP publiques", r.ips, "Une IP écrite en dur peut être un serveur de contrôle.")}</div>
+    ${block("Adresses web complètes", r.urls)}
+    ${block("Commandes système", r.commands, "cmd, PowerShell, schtasks, reg, netsh, bcdedit…")}
+    ${block("Clés de registre", r.registryKeys)}</div>`;
+  bindCommon();
+}
+
+/* ---------- textes ---------- */
+function pStr(){
+  $("main").innerHTML = `<div class="page"><h2 class="pt">Textes trouvés</h2><p class="pd">Tous les morceaux de texte lisibles dans le fichier (${S.result.stringCount.toLocaleString("fr-FR")}). Pratique pour chercher une adresse, un mot de passe écrit en dur, un nom…</p>
+    <div class="search" style="max-width:520px">${ic("search")}<input id="sq" placeholder="Rechercher dans les textes (2 lettres minimum)…" spellcheck="false"></div>
+    <div id="scount" style="color:var(--tx3);font-size:12.5px;margin:10px 0 6px"></div>
+    <div class="card" style="padding:8px"><div class="str-list" id="slist"><div>Chargement…</div></div></div></div>`;
+  $("sq").oninput = renderStrings;
+  if (S.strings) renderStrings(); else host.post({cmd:"readStrings"});
+}
+function renderStrings(){
+  if (!S.strings || !$("slist")) return;
+  const q = ($("sq").value||"").toLowerCase();
+  const list = q.length>=2 ? S.strings.filter(s => s.toLowerCase().includes(q)) : S.strings;
+  const max = 3000;
+  $("scount").textContent = (q.length>=2 ? list.length.toLocaleString("fr-FR")+" résultat(s)" : list.length.toLocaleString("fr-FR")+" textes") + (list.length>max?" · "+max+" premiers affichés":"");
+  $("slist").innerHTML = list.slice(0,max).map(s=>`<div>${esc(s)}</div>`).join("") || "<div>Aucun résultat.</div>";
+}
+
+/* ---------- structure ---------- */
+const SUS_API = /^(VirtualAllocEx|WriteProcessMemory|CreateRemoteThread|NtCreateThreadEx|SetWindowsHookEx[AW]?|GetAsyncKeyState|URLDownloadToFile[AW]?|InternetOpen[AW]?|WinExec|ShellExecute(Ex)?[AW]?|CryptUnprotectData|IsDebuggerPresent|CheckRemoteDebuggerPresent|NtUnmapViewOfSection|SetThreadContext|ResumeThread|AdjustTokenPrivileges|OpenProcess|CreateToolhelp32Snapshot|GetClipboardData|SetClipboardData|RegSetValueEx[AW]?|BitBlt|MiniDumpWriteDump|LoadLibrary[AW]?|GetProcAddress)$/;
+function pPe(){
+  const p = S.result.pe;
+  if (!p.isPe){ $("main").innerHTML = `<div class="page"><h2 class="pt">Structure</h2><div class="card empty">Ce fichier n'est pas un programme Windows : pas de structure PE à afficher.</div></div>`; return; }
+  const ecol = e => e>=7.2?"var(--crit)":e>=6.5?"var(--med)":"var(--ok)";
+  const nImp = p.imports.reduce((a,d)=>a+d.functions.length,0);
+  $("main").innerHTML = `<div class="page"><h2 class="pt">Structure du programme</h2><p class="pd">Les « sections » sont les grandes parties du fichier. Une entropie proche de 8 veut dire que le contenu est compressé ou chiffré.</p>
+    <div class="tabs"><button class="tab on" data-t="sec">Sections</button><button class="tab" data-t="imp">Fonctions importées (${nImp})</button><button class="tab" data-t="res">Ressources (${p.resources.length})</button><button class="tab" data-t="ver">Infos de version</button>${p.manifest?'<button class="tab" data-t="man">Manifeste</button>':""}${p.exports.length?`<button class="tab" data-t="exp">Exportées (${p.exports.length})</button>`:""}</div>
+    <div class="card" id="pec"></div>
+    <div class="card mt"><dl class="kv"><dt>Point d'entrée</dt><dd class="mono">${esc(p.entryPoint)}</dd><dt>Adresse de base</dt><dd class="mono">${esc(p.imageBase)}</dd>
+      <dt>Données ajoutées</dt><dd>${p.overlaySize?size(p.overlaySize)+(p.overlayType?" ("+esc(p.overlayType)+")":""):"aucune"}</dd><dt>Admin requis</dt><dd>${p.requiresAdmin?"oui":"non"}</dd></dl></div></div>`;
+  const tabs = {
+    sec: () => `<table class="t"><tr><th>Nom</th><th>Taille</th><th>Droits</th><th>Entropie</th></tr>${p.sections.map(s=>`<tr><td class="mono">${esc(s.name)}</td><td>${size(s.rawSize)}</td><td class="mono">${esc(s.flags)}</td><td><div class="ent"><div class="b"><i style="width:${s.entropy/8*100}%;background:${ecol(s.entropy)}"></i></div>${s.entropy.toFixed(2)}</div></td></tr>`).join("")}</table>`,
+    imp: () => p.imports.length ? p.imports.map(d=>`<details class="imp"><summary>${esc(d.dll)} <small>${d.functions.length}</small></summary><div>${d.functions.map(f=>SUS_API.test(f)?`<span class="api-sus">${esc(f)}</span>`:esc(f)).join(", ")}</div></details>`).join("") + '<div style="color:var(--tx3);font-size:12px;margin-top:10px">En orange : fonctions souvent utilisées par les malwares (mais aussi par des programmes normaux).</div>' : '<div class="empty">Aucune fonction importée (normal pour un programme .NET, qui passe par mscoree.dll).</div>',
+    res: () => p.resources.length ? `<table class="t"><tr><th>Type</th><th>Nom</th><th>Taille</th><th>Contenu détecté</th></tr>${p.resources.map(x=>`<tr><td>${esc(x.type)}</td><td class="mono">${esc(x.name)}</td><td>${size(x.size)}</td><td>${esc(x.detected||"—")}</td></tr>`).join("")}</table>` : '<div class="empty">Aucune ressource.</div>',
+    ver: () => Object.keys(p.versionInfo).length ? `<dl class="kv">${Object.entries(p.versionInfo).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>` : '<div class="empty">Pas d\'informations de version.</div>',
+    man: () => `<pre class="src sel" style="padding:0;white-space:pre-wrap">${highlight("xml", p.manifest)}</pre>`,
+    exp: () => `<div class="lst">${p.exports.map(x=>`<div class="li"><span>${esc(x)}</span></div>`).join("")}</div>`,
+  };
+  const set = t => { for (const b of document.querySelectorAll(".tab")) b.classList.toggle("on", b.dataset.t===t); $("pec").innerHTML = tabs[t](); };
+  for (const b of document.querySelectorAll(".tab")) b.onclick = () => set(b.dataset.t);
+  set("sec");
+}
+
+/* ---------- fichiers ---------- */
+function pFiles(){
+  const r = S.result;
+  const total = r.files.reduce((a,f)=>a+f.size,0);
+  $("main").innerHTML = `<div class="page"><h2 class="pt">Fichiers produits par l'analyse</h2>
+    <p class="pd">${r.files.length} fichiers, ${size(total)} au total, dans <span class="mono sel">${esc(r.outputDir)}</span>. Par sécurité, ce qui pourrait se lancer d'un double-clic a été renommé (« .exe.bin », « .js.txt »…).</p>
+    <div class="search" style="max-width:420px;margin-bottom:12px">${ic("search")}<input id="fq" placeholder="Filtrer…" spellcheck="false"></div>
+    <div class="card" style="padding:4px 8px"><table class="t" id="ft"></table></div></div>`;
+  const draw = () => {
+    const q = $("fq").value.toLowerCase();
+    const list = r.files.filter(f => !q || f.path.toLowerCase().includes(q)).slice(0, 3000);
+    $("ft").innerHTML = `<tr><th>Fichier</th><th style="width:90px">Taille</th><th style="width:70px"></th></tr>` + list.map(f=>`<tr><td class="mono">${esc(f.path)}</td><td>${size(f.size)}</td><td><button class="btn sm ghost" data-v="${esc(f.path)}">Voir</button></td></tr>`).join("");
+    for (const b of document.querySelectorAll("[data-v]")) b.onclick = () => openFileAt(b.dataset.v, 0);
+  };
+  $("fq").oninput = draw; draw();
+}
+
+/* ================= réglages ================= */
+function openSettings(){
+  const s = S.settings;
+  $("mbox").innerHTML = `<h3>Réglages</h3><div style="color:var(--tx2);font-size:13px">Les outils facultatifs améliorent la décompilation.</div>
+    <div class="fld"><label>Dossier des résultats</label><small>Chaque analyse crée un sous-dossier ici.</small><div class="row"><input type="text" id="sOut" value="${esc(s.outputRoot||"")}" spellcheck="false"><button class="btn" data-browse="sOut">Parcourir</button></div></div>
+    <div class="fld"><label>Dossier de Ghidra (facultatif)</label><small>Pour obtenir du pseudo-code C des programmes natifs (C, C++, Rust, Go…). Ghidra est gratuit : ghidra-sre.org (il demande Java 21).</small><div class="row"><input type="text" id="sGh" value="${esc(s.ghidraDir||"")}" placeholder="ex. C:\\ghidra_11.4_PUBLIC" spellcheck="false"><button class="btn" data-browse="sGh">Parcourir</button></div></div>
+    <div class="fld"><label>Dossier des outils (facultatif)</label><small>Mettez-y <b>pycdc.exe</b> (code Python) et <b>upx.exe</b> (programmes compressés). Par défaut : le dossier « outils » à côté de Loupe.exe.</small><div class="row"><input type="text" id="sTools" value="${esc(s.toolsDir||"")}" spellcheck="false"><button class="btn" data-browse="sTools">Parcourir</button></div></div>
+    <label class="chk"><input type="checkbox" id="sDec" ${s.decompile!==false?"checked":""}><span><b>Décompiler le code</b><br><span style="color:var(--tx3)">Décoché : seulement le verdict de sécurité, plus rapide.</span></span></label>
+    <div class="mact"><button class="btn" id="sCancel">Annuler</button><button class="btn pri" id="sSave">Enregistrer</button></div>`;
+  $("modal").classList.add("on");
+  for (const b of document.querySelectorAll("[data-browse]")) b.onclick = () => host.post({cmd:"browseFolder", field:b.dataset.browse, current:$(b.dataset.browse).value});
+  $("sCancel").onclick = closeModal;
+  $("sSave").onclick = () => { host.post({cmd:"saveSettings", settings:{outputRoot:$("sOut").value.trim(), ghidraDir:$("sGh").value.trim(), toolsDir:$("sTools").value.trim(), decompile:$("sDec").checked}}); closeModal(); toast("Réglages enregistrés"); };
+}
+function closeModal(){ $("modal").classList.remove("on"); }
+$("bSet").onclick = openSettings;
+$("modal").onclick = e => { if (e.target.id==="modal") closeModal(); };
+document.addEventListener("keydown", e => { if (e.key==="Escape") closeModal(); if ((e.ctrlKey||e.metaKey) && e.key==="o"){ e.preventDefault(); if(!S.busy) host.post({cmd:"pick"}); } });
+
+/* ================= messages du programme Windows ================= */
+function onHost(m){
+  switch (m.type){
+    case "init": S.settings = m.settings||{}; S.recents = m.recents||[]; $("ver").textContent = "v"+(m.version||""); renderRecents(); break;
+    case "recents": S.recents = m.recents||[]; renderRecents(); break;
+    case "start": S.busy = true; $("pName").textContent = m.name; $("pStep").textContent = "Préparation…"; $("pBar").style.width = "0"; $("pPct").textContent = "0 %"; show("prog"); break;
+    case "progress": $("pStep").textContent = m.step; $("pBar").style.width = m.pct+"%"; $("pPct").textContent = m.pct+" %"; break;
+    case "result": S.busy = false; openResult(m.result); break;
+    case "error": S.busy = false; if (!S.result) show("home"); else show("res"); toast(m.message, true); break;
+    case "cancelled": S.busy = false; show(S.result ? "res" : "home"); toast("Analyse annulée"); break;
+    case "file": showFile(m); break;
+    case "strings": S.strings = m.list; renderStrings(); break;
+    case "folder": { const i = $(m.field); if (i && m.path) i.value = m.path; break; }
+    case "toast": toast(m.message, m.error); break;
+  }
+}
+if (W) W.addEventListener("message", e => onHost(e.data));
+window.__onHost = onHost;
+host.post({cmd:"init"});
+</script>
+</body>
+</html>

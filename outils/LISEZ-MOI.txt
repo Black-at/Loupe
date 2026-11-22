@@ -1,0 +1,4 @@
+Placez ici les outils facultatifs :
+  pycdc.exe  -> code Python lisible pour les programmes PyInstaller
+  upx.exe    -> décompression des programmes compressés avec UPX
+Loupe les trouve tout seul au prochain lancement d'une analyse.

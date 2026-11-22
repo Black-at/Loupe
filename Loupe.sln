@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Loupe.Core", "Loupe.Core\Loupe.Core.csproj", "{F95DEDA9-32D8-4708-B28E-934E9C0B33BC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Loupe.Cli", "Loupe.Cli\Loupe.Cli.csproj", "{DC7DC4AD-6BEE-43CF-BA21-76B603CA23B3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F95DEDA9-32D8-4708-B28E-934E9C0B33BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F95DEDA9-32D8-4708-B28E-934E9C0B33BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F95DEDA9-32D8-4708-B28E-934E9C0B33BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F95DEDA9-32D8-4708-B28E-934E9C0B33BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC7DC4AD-6BEE-43CF-BA21-76B603CA23B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC7DC4AD-6BEE-43CF-BA21-76B603CA23B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC7DC4AD-6BEE-43CF-BA21-76B603CA23B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC7DC4AD-6BEE-43CF-BA21-76B603CA23B3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

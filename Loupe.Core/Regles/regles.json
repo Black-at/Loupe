@@ -1,0 +1,601 @@
+[
+  {
+    "id": "ransom_shadow",
+    "severity": "Critique",
+    "weight": 45,
+    "category": "Destruction / rançon",
+    "title": "Supprime les sauvegardes de Windows",
+    "explanation": "Effacer les « clichés instantanés » et le catalogue de sauvegarde empêche de récupérer ses fichiers. C'est la signature des rançongiciels.",
+    "minDistinct": 1,
+    "groups": [
+      "vssadmin(\\.exe)?\"?\\s+delete\\s+shadows|wmic(\\.exe)?\\s+shadowcopy\\s+delete|wbadmin(\\.exe)?\\s+delete\\s+(catalog|systemstatebackup)|bcdedit[^\\n]{0,40}recoveryenabled\\s+no|Win32_ShadowCopy[^\\n]{0,80}Delete"
+    ]
+  },
+  {
+    "id": "ransom_note",
+    "severity": "Critique",
+    "weight": 40,
+    "category": "Destruction / rançon",
+    "title": "Message de rançon",
+    "explanation": "Le programme contient un texte qui ressemble à une demande de rançon (fichiers chiffrés, paiement en bitcoin, site .onion).",
+    "minDistinct": 1,
+    "groups": [
+      "your (important |personal )?files (have been|are|were) encrypted|vos fichiers (ont été|sont) (chiffrés|cryptés)|HOW_TO_DECRYPT|README_FOR_DECRYPT|send\\s+\\$?\\d+[^\\n]{0,30}bitcoin|decryption key[^\\n]{0,40}(buy|pay|purchase)"
+    ]
+  },
+  {
+    "id": "known_family",
+    "severity": "Critique",
+    "weight": 45,
+    "category": "Contrôle à distance",
+    "title": "Nom d'un malware connu",
+    "explanation": "Le code cite le nom d'une famille de malwares connue (RAT, voleur de mots de passe, rançongiciel). Exception possible : un antivirus ou un outil de sécurité qui liste ces noms.",
+    "minDistinct": 1,
+    "groups": [
+      "\\b(AsyncRAT|AsyncClient|QuasarRAT|Quasar\\.Client|njRAT|NanoCore|Remcos|DarkComet|RedLine(Stealer)?|LummaC2|Lumma Stealer|Stealerium|StormKitty|Raccoon ?Stealer|VidarStealer|AgentTesla|XWorm|DCRat|BitRAT|VenomRAT|LokiBot|FormBook|Azorult|WannaCry|WanaCrypt0r|LockBit|BlackCat|Mimikatz|sekurlsa|PureLogs|Umbral ?Stealer|BlankGrabber|Blank Grabber|Empyrean|Luna ?Grabber|Creal ?Stealer|Hazard ?Token ?Grabber|PySilon|Rhadamanthys|MetaStealer)\\b"
+    ]
+  },
+  {
+    "id": "lsass_dump",
+    "severity": "Critique",
+    "weight": 40,
+    "category": "Vol de données",
+    "title": "Copie la mémoire de LSASS (mots de passe Windows)",
+    "explanation": "LSASS est le processus qui garde les identifiants Windows en mémoire. Le « dumper » sert à voler ces mots de passe.",
+    "minDistinct": 1,
+    "groups": [
+      "lsass(\\.exe)?[^\\n]{0,60}(MiniDumpWriteDump|comsvcs|\\.dmp)|MiniDumpWriteDump[^\\n]{0,80}lsass|comsvcs(\\.dll)?[^\\n]{0,20}MiniDump|procdump[^\\n]{0,30}lsass"
+    ]
+  },
+  {
+    "id": "browser_creds",
+    "severity": "Eleve",
+    "weight": 25,
+    "category": "Vol de données",
+    "title": "Accède aux mots de passe et cookies des navigateurs",
+    "explanation": "Le programme vise les fichiers où Chrome, Edge, Firefox… rangent les mots de passe enregistrés, les cookies et la clé qui les protège. C'est le cœur d'un « stealer ».",
+    "minDistinct": 1,
+    "groups": [
+      "Login Data|logins\\.json|key4\\.db|signons\\.sqlite|Network\\\\{1,2}Cookies|cookies\\.sqlite|Login Data For Account",
+      "Google\\\\{1,2}Chrome\\\\{1,2}User Data|Microsoft\\\\{1,2}Edge\\\\{1,2}User Data|BraveSoftware|Opera Software|Mozilla\\\\{1,2}Firefox\\\\{1,2}Profiles|YandexBrowser|Vivaldi\\\\{1,2}User Data|Chromium\\\\{1,2}User Data"
+    ]
+  },
+  {
+    "id": "dpapi_key",
+    "severity": "Eleve",
+    "weight": 20,
+    "category": "Vol de données",
+    "title": "Déchiffre la clé des navigateurs (DPAPI)",
+    "explanation": "La clé « encrypted_key » de Chrome/Edge, déchiffrée avec DPAPI, permet de lire tous les mots de passe enregistrés.",
+    "minDistinct": 1,
+    "groups": [
+      "encrypted_key|app_bound_encrypted_key",
+      "CryptUnprotectData|ProtectedData::Unprotect|\\bDPAPI\\b|win32crypt"
+    ]
+  },
+  {
+    "id": "discord_token",
+    "severity": "Eleve",
+    "weight": 25,
+    "category": "Vol de données",
+    "title": "Cherche les tokens Discord",
+    "explanation": "Le token Discord permet de se connecter à un compte sans mot de passe. Le programme fouille le stockage local de Discord ou contient le motif d'un token.",
+    "minDistinct": 1,
+    "groups": [
+      "discord(canary|ptb)?\\\\{1,2}Local Storage\\\\{1,2}leveldb|leveldb[^\\n]{0,60}discord|discord[^\\n]{0,60}leveldb|dQw4w9WgXcQ:|\\[\\\\w-\\]\\{2[46]\\}\\\\?\\.\\[\\\\w-\\]\\{6\\}|mfa\\\\?\\.\\[\\\\w-\\]\\{84\\}"
+    ]
+  },
+  {
+    "id": "crypto_wallets",
+    "severity": "Eleve",
+    "weight": 25,
+    "category": "Vol de données",
+    "title": "Vise des portefeuilles de cryptomonnaies",
+    "explanation": "Le programme connaît l'emplacement de portefeuilles (Exodus, Electrum, MetaMask…). Les voleurs de données copient ces fichiers pour vider les comptes.",
+    "minDistinct": 1,
+    "groups": [
+      "wallet\\.dat|Exodus\\\\{1,2}exodus\\.wallet|exodus\\.wallet|Electrum\\\\{1,2}wallets|nkbihfbeogaeaoehlefnkodbefgpgknn|Ethereum\\\\{1,2}keystore|atomic\\\\{1,2}Local Storage|Coinomi\\\\{1,2}Coinomi|Guarda\\\\{1,2}Local Storage|ejbalbakoplchlghecdalmeeeajnimhm|fhbohimaelbohpjbbldcngcnapndodjp|bfnaelmomeimhlpmgjnjophhpkkoljpa"
+    ]
+  },
+  {
+    "id": "app_creds",
+    "severity": "Eleve",
+    "weight": 20,
+    "category": "Vol de données",
+    "title": "Vise des comptes de jeux, Telegram, VPN ou FTP",
+    "explanation": "Le programme connaît les fichiers où Steam, Telegram, Minecraft, FileZilla, des VPN… gardent les sessions ou identifiants. Plusieurs cibles à la fois, c'est typique d'un voleur de données.",
+    "minDistinct": 2,
+    "groups": [
+      "\\bssfn\\b|loginusers\\.vdf|Telegram Desktop\\\\{1,2}tdata|\\\\{1,2}tdata\\b|launcher_accounts\\.json|FileZilla\\\\{1,2}recentservers\\.xml|sitemanager\\.xml|NordVPN\\\\{1,2}|ProtonVPN\\\\{1,2}|OpenVPN Connect\\\\{1,2}profiles|Growtopia\\\\{1,2}save\\.dat|Battle\\.net\\\\{1,2}Battle\\.net\\.config|\\.minecraft\\\\{1,2}launcher_profiles|Riot Client\\\\{1,2}Data\\\\{1,2}RiotGamesPrivateSettings|Ubisoft Game Launcher\\\\{1,2}"
+    ]
+  },
+  {
+    "id": "wifi_pw",
+    "severity": "Eleve",
+    "weight": 20,
+    "category": "Vol de données",
+    "title": "Récupère les mots de passe Wi-Fi",
+    "explanation": "La commande « netsh wlan show profile … key=clear » affiche en clair les mots de passe Wi-Fi enregistrés.",
+    "minDistinct": 1,
+    "groups": [
+      "netsh(\\.exe)?\\s+wlan\\s+show\\s+profiles?[^\\n]{0,60}key\\s*=\\s*clear"
+    ]
+  },
+  {
+    "id": "keylogger",
+    "severity": "Eleve",
+    "weight": 30,
+    "category": "Vol de données",
+    "title": "Enregistre les touches du clavier (keylogger)",
+    "explanation": "Le programme écoute le clavier et contient des marqueurs typiques d'un journal de frappes ([ENTER], [BACKSPACE]…).",
+    "minDistinct": 1,
+    "groups": [
+      "SetWindowsHookEx|GetAsyncKeyState|GetKeyboardState|RegisterRawInputDevices",
+      "\\[(ENTER|BACKSPACE|BACK|TAB|CAPSLOCK|CAPS LOCK|SHIFT|CTRL|ESC|DEL)\\]|keylog|keystrokes?\\b|frappes? clavier"
+    ]
+  },
+  {
+    "id": "clipper",
+    "severity": "Eleve",
+    "weight": 25,
+    "category": "Vol de données",
+    "title": "Surveille le presse-papiers + adresses crypto",
+    "explanation": "Lire/remplacer le presse-papiers en cherchant des adresses de cryptomonnaie est la technique du « clipper » : votre adresse de paiement est remplacée par celle du pirate.",
+    "minDistinct": 1,
+    "groups": [
+      "GetClipboardData|SetClipboardData|Clipboard::SetText|Clipboard::GetText|Clipboard::SetDataObject|pyperclip|win32clipboard",
+      "a-km-zA-HJ-NP-Z1-9|\\[a-fA-F0-9\\]\\{40\\}|\\bbc1q|\\(bc1\\||\\[13\\]\\[|0x\\[a-fA-F0-9\\]|\\^T\\[A-Za-z1-9\\]|\\^4\\[0-9AB\\]"
+    ]
+  },
+  {
+    "id": "discord_webhook",
+    "severity": "Eleve",
+    "weight": 25,
+    "category": "Réseau",
+    "title": "Envoie des données à un webhook Discord",
+    "explanation": "Un webhook Discord permet d'envoyer des messages et fichiers dans un salon. C'est le moyen le plus utilisé par les voleurs de données pour récupérer ce qu'ils volent.",
+    "minDistinct": 1,
+    "groups": [
+      "discord(app)?\\.com/api/(v\\d+/)?webhooks/\\d{10,}|discord(app)?\\.com/api/(v\\d+/)?webhooks"
+    ]
+  },
+  {
+    "id": "telegram_bot",
+    "severity": "Eleve",
+    "weight": 25,
+    "category": "Réseau",
+    "title": "Envoie des données à un bot Telegram",
+    "explanation": "Le programme parle à l'API des bots Telegram (envoi de messages/fichiers) : méthode courante pour exfiltrer des données volées.",
+    "minDistinct": 1,
+    "groups": [
+      "api\\.telegram\\.org/bot|sendDocument\\?chat_id|\\bbot\\d{8,11}:[A-Za-z0-9_-]{35}"
+    ]
+  },
+  {
+    "id": "injection",
+    "severity": "Eleve",
+    "weight": 30,
+    "category": "Exécution de code",
+    "title": "Injecte du code dans d'autres programmes",
+    "explanation": "Réserver de la mémoire dans un autre processus, y écrire, puis y lancer un thread : c'est l'injection de code, utilisée pour se cacher dans un programme légitime. (Aussi utilisée par certains overlays et triches.)",
+    "minDistinct": 1,
+    "groups": [
+      "\\bVirtualAllocEx\\b|\\bNtAllocateVirtualMemory\\b",
+      "\\bWriteProcessMemory\\b|\\bNtWriteVirtualMemory\\b",
+      "\\bCreateRemoteThread(Ex)?\\b|\\bNtCreateThreadEx\\b|\\bQueueUserAPC\\b|\\bRtlCreateUserThread\\b|\\bSetThreadContext\\b"
+    ]
+  },
+  {
+    "id": "hollowing",
+    "severity": "Eleve",
+    "weight": 30,
+    "category": "Exécution de code",
+    "title": "Remplace le code d'un autre programme (process hollowing)",
+    "explanation": "Vider un processus légitime pour y mettre son propre code est une technique de camouflage des malwares (« RunPE »).",
+    "minDistinct": 1,
+    "groups": [
+      "\\bNtUnmapViewOfSection\\b|\\bZwUnmapViewOfSection\\b|\\bRunPE\\b",
+      "\\bSetThreadContext\\b|\\bWow64SetThreadContext\\b",
+      "\\bResumeThread\\b"
+    ]
+  },
+  {
+    "id": "reverse_shell",
+    "severity": "Eleve",
+    "weight": 25,
+    "category": "Contrôle à distance",
+    "title": "Invite de commandes pilotable à distance",
+    "explanation": "Le programme lance cmd/PowerShell en redirigeant son entrée et se connecte à un serveur : c'est la base d'un accès à distance (reverse shell).",
+    "minDistinct": 1,
+    "groups": [
+      "set_RedirectStandardInput|CreatePipe|subprocess\\.Popen",
+      "TcpClient::\\.ctor|TcpClient::Connect|Socket::Connect|WSAConnect|ws2_32(\\.dll)?!connect|socket\\.connect",
+      "cmd\\.exe|powershell\\.exe"
+    ]
+  },
+  {
+    "id": "crypto_mining",
+    "severity": "Eleve",
+    "weight": 30,
+    "category": "Exécution de code",
+    "title": "Mineur de cryptomonnaie",
+    "explanation": "Le programme contient la configuration d'un mineur (adresse de pool « stratum », options de XMRig…) : il utiliserait votre processeur/carte graphique pour gagner de l'argent à votre place.",
+    "minDistinct": 1,
+    "groups": [
+      "stratum\\+(tcp|ssl|tls)://|--donate-level|\"donate-level\"|pool\\.supportxmr|minexmr\\.com|[\\w.-]+\\.nanopool\\.org|moneroocean\\.stream|herominers\\.com|--cpu-max-threads-hint|\"algo\"\\s*:\\s*\"(rx/0|cn/r|kawpow)\""
+    ]
+  },
+  {
+    "id": "defender_exclusion",
+    "severity": "Eleve",
+    "weight": 30,
+    "category": "Sécurité de Windows",
+    "title": "Ajoute des exclusions à l'antivirus",
+    "explanation": "Le programme peut demander à Windows Defender de ne plus analyser certains dossiers ou programmes. Les malwares s'en servent pour devenir invisibles.",
+    "minDistinct": 1,
+    "groups": [
+      "Add-MpPreference[^\\n]{0,120}Exclusion|-ExclusionPath\\b|-ExclusionProcess\\b|-ExclusionExtension\\b|Windows Defender\\\\{1,2}Exclusions\\\\{1,2}(Paths|Processes|Extensions)"
+    ]
+  },
+  {
+    "id": "defender_disable",
+    "severity": "Eleve",
+    "weight": 25,
+    "category": "Sécurité de Windows",
+    "title": "Peut désactiver des protections de Windows Defender",
+    "explanation": "Le programme connaît les réglages qui coupent la protection en temps réel, la surveillance du comportement ou l'envoi d'échantillons. Certains « optimiseurs » le proposent, mais c'est aussi un réflexe des malwares.",
+    "minDistinct": 1,
+    "groups": [
+      "DisableAntiSpyware|DisableRealtimeMonitoring|DisableBehaviorMonitoring|DisableIOAVProtection|DisableScriptScanning|DisableOnAccessProtection|Set-MpPreference[^\\n]{0,60}-Disable\\w+\\s+\\$?(true|1)|sc(\\.exe)?\\s+(stop|delete|config)\\s+WinDefend|net\\s+stop\\s+WinDefend|SubmitSamplesConsent[^\\n]{0,20}\\b2\\b|MAPSReporting[^\\n]{0,20}\\b0\\b"
+    ]
+  },
+  {
+    "id": "kill_av",
+    "severity": "Eleve",
+    "weight": 25,
+    "category": "Sécurité de Windows",
+    "title": "Arrête des antivirus",
+    "explanation": "Le programme essaie de fermer de force des processus d'antivirus.",
+    "minDistinct": 1,
+    "groups": [
+      "taskkill[^\\n]{0,40}(msmpeng|avp\\.exe|avastui|avgui|mbam|ekrn|bdagent|nortonsecurity|mcshield|wrsa\\.exe|SecurityHealth)"
+    ]
+  },
+  {
+    "id": "uac_bypass",
+    "severity": "Eleve",
+    "weight": 30,
+    "category": "Sécurité de Windows",
+    "title": "Contourne le contrôle de compte (UAC)",
+    "explanation": "Ces clés/programmes sont utilisés pour obtenir les droits administrateur sans afficher la fenêtre de confirmation de Windows.",
+    "minDistinct": 1,
+    "groups": [
+      "ms-settings\\\\{1,2}shell\\\\{1,2}open\\\\{1,2}command|mscfile\\\\{1,2}shell\\\\{1,2}open\\\\{1,2}command|exefile\\\\{1,2}shell\\\\{1,2}runas\\\\{1,2}command|fodhelper\\.exe|computerdefaults\\.exe|\\bsdclt\\.exe|cmstp(\\.exe)?\\s+/au"
+    ]
+  },
+  {
+    "id": "persist_hijack",
+    "severity": "Eleve",
+    "weight": 20,
+    "category": "Démarrage automatique",
+    "title": "Se greffe au démarrage de Windows (méthode cachée)",
+    "explanation": "Modifier Winlogon, « AppInit_DLLs » ou le « Debugger » d'un programme permet de se lancer à chaque démarrage sans apparaître dans la liste habituelle.",
+    "minDistinct": 1,
+    "groups": [
+      "Winlogon\\\\{0,2}[^\\n]{0,30}\\b(Userinit|Shell)\\b[^\\n]{0,40}(explorer\\.exe,|\\.exe)|AppInit_DLLs|Image File Execution Options[^\\n]{0,80}Debugger"
+    ]
+  },
+  {
+    "id": "defender_modify",
+    "severity": "Moyen",
+    "weight": 5,
+    "category": "Sécurité de Windows",
+    "title": "Modifie des réglages de Windows Defender",
+    "explanation": "Le programme utilise « Set-MpPreference » pour changer la configuration de l'antivirus.",
+    "minDistinct": 1,
+    "groups": [
+      "Set-MpPreference"
+    ]
+  },
+  {
+    "id": "uac_disable",
+    "severity": "Moyen",
+    "weight": 8,
+    "category": "Sécurité de Windows",
+    "title": "Peut désactiver le contrôle de compte (UAC)",
+    "explanation": "Mettre EnableLUA ou ConsentPromptBehaviorAdmin à 0 supprime la fenêtre de confirmation des droits administrateur.",
+    "minDistinct": 1,
+    "groups": [
+      "EnableLUA\"?[^\\n]{0,20}[\\s,=:]\"?0\\b|ConsentPromptBehaviorAdmin\"?[^\\n]{0,20}[\\s,=:]\"?0\\b"
+    ]
+  },
+  {
+    "id": "security_features",
+    "severity": "Moyen",
+    "weight": 5,
+    "category": "Sécurité de Windows",
+    "title": "Touche à l'isolation du noyau / SmartScreen",
+    "explanation": "Le programme connaît les réglages de l'intégrité de la mémoire (HVCI), de la sécurité basée sur la virtualisation ou de SmartScreen. Les désactiver rend le PC plus vulnérable.",
+    "minDistinct": 1,
+    "groups": [
+      "HypervisorEnforcedCodeIntegrity|EnableVirtualizationBasedSecurity|DeviceGuard\\\\{1,2}|SmartScreenEnabled|EnableSmartScreen|VulnerableDriverBlocklistEnable"
+    ]
+  },
+  {
+    "id": "ps_encoded",
+    "severity": "Moyen",
+    "weight": 6,
+    "category": "Exécution de code",
+    "title": "Lance du PowerShell encodé",
+    "explanation": "Les commandes PowerShell sont passées en Base64 (-EncodedCommand). C'est pratique pour les développeurs, mais ça sert aussi à cacher ce qui est exécuté.",
+    "minDistinct": 1,
+    "groups": [
+      "powershell(\\.exe)?[^\\n]{0,160}\\s-e(nc|ncodedcommand|ncodedCommand)?\\s|powershell(\\.exe)?[^\\n]{0,160}-EncodedCommand"
+    ]
+  },
+  {
+    "id": "ps_stealth",
+    "severity": "Moyen",
+    "weight": 5,
+    "category": "Exécution de code",
+    "title": "Lance PowerShell caché ou sans restriction",
+    "explanation": "« -ExecutionPolicy Bypass » ignore la politique de sécurité des scripts et « -WindowStyle Hidden » cache la fenêtre.",
+    "minDistinct": 1,
+    "groups": [
+      "-ExecutionPolicy\\s+Bypass|-ep\\s+bypass|-exec\\s+bypass|-WindowStyle\\s+Hidden|-w\\s+hidden\\b"
+    ]
+  },
+  {
+    "id": "download_exec",
+    "severity": "Eleve",
+    "weight": 20,
+    "category": "Exécution de code",
+    "title": "Télécharge puis exécute quelque chose",
+    "explanation": "Le programme combine un téléchargement depuis Internet et une exécution (PowerShell IEX, lancement de programme, chargement en mémoire). C'est le fonctionnement d'un « dropper » qui installe d'autres malwares.",
+    "minDistinct": 1,
+    "groups": [
+      "DownloadString|DownloadFile|DownloadData|Invoke-WebRequest|\\biwr\\s|Invoke-RestMethod|URLDownloadToFile|Start-BitsTransfer|bitsadmin(\\.exe)?\\s+/transfer|certutil(\\.exe)?[^\\n]{0,20}-urlcache",
+      "\\bIEX\\b|Invoke-Expression|Start-Process|WinExec|ShellExecute(Ex)?(A|W)?\\b|Process::Start|CreateProcess(A|W)\\b|Assembly::Load\\b|os\\.startfile|subprocess\\.(Popen|call|run)"
+    ]
+  },
+  {
+    "id": "memory_load",
+    "severity": "Moyen",
+    "weight": 4,
+    "category": "Exécution de code",
+    "title": "Charge du code directement en mémoire",
+    "explanation": "Le programme peut charger un module .NET à partir d'octets (Assembly.Load) ou rendre une zone mémoire exécutable. Utilisé par des applis normales (plugins), mais aussi par les « loaders » de malwares.",
+    "minDistinct": 1,
+    "groups": [
+      "Assembly::Load\\b|AppDomain::Load\\b|Reflection\\.Assembly\\]::Load|Assembly::LoadFile\\b"
+    ]
+  },
+  {
+    "id": "dyn_dns",
+    "severity": "Moyen",
+    "weight": 8,
+    "category": "Réseau",
+    "title": "Serveur sur un nom de domaine gratuit / tunnel",
+    "explanation": "Le programme contacte une adresse en DNS dynamique gratuit (DuckDNS, No-IP…) ou un tunnel (ngrok, Cloudflare…). Courant pour les petits projets, mais aussi très utilisé par les serveurs de contrôle de malwares.",
+    "minDistinct": 1,
+    "groups": [
+      "\\b[\\w.-]+\\.(duckdns\\.org|ddns\\.net|hopto\\.org|zapto\\.org|sytes\\.net|no-ip\\.(org|com|biz|info)|serveo\\.net|ngrok\\.io|ngrok-free\\.app|ngrok\\.app|trycloudflare\\.com|portmap\\.(io|host)|playit\\.gg|dynu\\.(com|net)|myftp\\.(org|biz)|serveftp\\.com|servegame\\.com|freeddns\\.org|linkpc\\.net)\\b|ngrok-skip-browser-warning"
+    ]
+  },
+  {
+    "id": "file_hosting",
+    "severity": "Moyen",
+    "weight": 10,
+    "category": "Réseau",
+    "title": "Télécharge depuis un site de partage de fichiers",
+    "explanation": "Pastebin, Discord CDN, transfer.sh… servent souvent à héberger la « charge utile » d'un malware car ils sont gratuits et anonymes.",
+    "minDistinct": 1,
+    "groups": [
+      "pastebin\\.com/raw|paste\\.ee/r|hastebin\\.com/raw|rentry\\.(co|org)/[^\\s\"']+/raw|transfer\\.sh/|anonfiles\\.com|gofile\\.io/|file\\.io/|catbox\\.moe/|cdn\\.discordapp\\.com/attachments|media\\.discordapp\\.net/attachments|bashupload\\.com|0x0\\.st/"
+    ]
+  },
+  {
+    "id": "tor",
+    "severity": "Moyen",
+    "weight": 10,
+    "category": "Réseau",
+    "title": "Utilise Tor (réseau anonyme)",
+    "explanation": "Le programme contient une adresse .onion ou passe par le proxy Tor : souvent utilisé pour cacher un serveur de contrôle.",
+    "minDistinct": 1,
+    "groups": [
+      "\\b[a-z2-7]{16,56}\\.onion\\b|socks5h?://127\\.0\\.0\\.1:9050|tor2web"
+    ]
+  },
+  {
+    "id": "exfil_mail_ftp",
+    "severity": "Moyen",
+    "weight": 8,
+    "category": "Réseau",
+    "title": "Envoie des e-mails ou des fichiers par FTP",
+    "explanation": "Le programme peut envoyer des e-mails (SMTP) ou déposer des fichiers sur un serveur FTP : un canal classique d'envoi de données volées.",
+    "minDistinct": 1,
+    "groups": [
+      "SmtpClient::Send|smtp\\.(gmail|office365|mail\\.ru|yandex|zoho|outlook)\\.com|smtplib\\.SMTP|FtpWebRequest|\\bftp://[^\\s\"']+"
+    ]
+  },
+  {
+    "id": "anti_vm",
+    "severity": "Moyen",
+    "weight": 10,
+    "category": "Dissimulation",
+    "title": "Détecte les machines virtuelles et outils d'analyse",
+    "explanation": "Le programme cherche plusieurs signes d'un environnement d'analyse (VirtualBox, VMware, Sandboxie, Wireshark, débogueurs…). Les malwares font ça pour changer de comportement quand on les étudie.",
+    "minDistinct": 3,
+    "groups": [
+      "VBoxService|VBoxTray|VBoxMouse|vmtoolsd|vmwaretray|VMware Tools|SbieDll|Sandboxie|wireshark|procmon|ProcessHacker|x64dbg|x32dbg|ollydbg|ida64|idaq|dnSpy|de4dot|fiddler|httpdebugger|cuckoo|JoeBox|HARDWARE\\\\{1,2}ACPI\\\\{1,2}DSDT\\\\{1,2}VBOX|qemu-ga|vboxguest|SbieCtrl|cmdvrt32|ProcessExplorer|tcpview|HTTP Debugger"
+    ]
+  },
+  {
+    "id": "self_delete",
+    "severity": "Moyen",
+    "weight": 5,
+    "category": "Dissimulation",
+    "title": "Peut s'effacer lui-même",
+    "explanation": "La commande « ping … & del/rmdir » attend quelques secondes puis efface un fichier ou dossier : un programme qui supprime ses traces. Les désinstalleurs l'utilisent aussi.",
+    "minDistinct": 1,
+    "groups": [
+      "ping[^\\n]{0,30}(127\\.0\\.0\\.1|localhost)[^\\n]{0,40}(\\bdel\\b|\\berase\\b|rmdir|rd\\s+/s)|choice\\s+/c\\s+y\\s+/n\\s+/d\\s+y\\s+/t|timeout[^\\n]{0,20}&\\s*del\\s"
+    ]
+  },
+  {
+    "id": "hosts_file",
+    "severity": "Moyen",
+    "weight": 5,
+    "category": "Modifie le système",
+    "title": "Modifie le fichier « hosts »",
+    "explanation": "Le fichier hosts redirige des noms de sites. Il peut servir à bloquer des publicités… ou les mises à jour de l'antivirus.",
+    "minDistinct": 1,
+    "groups": [
+      "drivers\\\\{1,2}etc\\\\{1,2}hosts"
+    ]
+  },
+  {
+    "id": "webcam_mic",
+    "severity": "Moyen",
+    "weight": 10,
+    "category": "Vol de données",
+    "title": "Accède à la webcam ou au micro",
+    "explanation": "Le programme utilise les fonctions de capture vidéo/son de Windows.",
+    "minDistinct": 1,
+    "groups": [
+      "capCreateCaptureWindow|avicap32(\\.dll)?|waveInOpen|waveInStart"
+    ]
+  },
+  {
+    "id": "service_create",
+    "severity": "Moyen",
+    "weight": 5,
+    "category": "Démarrage automatique",
+    "title": "Crée un service Windows",
+    "explanation": "Un service démarre avec Windows, avant même l'ouverture de session.",
+    "minDistinct": 1,
+    "groups": [
+      "sc(\\.exe)?\\s+create\\s|New-Service\\b|CreateService(A|W)\\b"
+    ]
+  },
+  {
+    "id": "boot_config",
+    "severity": "Moyen",
+    "weight": 4,
+    "category": "Modifie le système",
+    "title": "Modifie les options de démarrage (bcdedit)",
+    "explanation": "bcdedit change la configuration du démarrage de Windows (minuteur, mode sans échec, intégrité…). Un mauvais réglage peut empêcher Windows de démarrer.",
+    "minDistinct": 1,
+    "groups": [
+      "bcdedit(\\.exe)?\\s+/(set|deletevalue)|bcdedit[^\\n]{0,40}(safeboot|nointegritychecks|testsigning)"
+    ]
+  },
+  {
+    "id": "persist_run",
+    "severity": "Faible",
+    "weight": 3,
+    "category": "Démarrage automatique",
+    "title": "Peut se lancer au démarrage de Windows",
+    "explanation": "Le programme connaît la clé « Run » ou le dossier Démarrage. Normal pour beaucoup d'applis (Discord, Steam…), à surveiller sinon.",
+    "minDistinct": 1,
+    "groups": [
+      "CurrentVersion\\\\{1,2}Run(Once)?\\b|\\\\{1,2}Start Menu\\\\{1,2}Programs\\\\{1,2}Startup|shell:startup"
+    ]
+  },
+  {
+    "id": "sched_task",
+    "severity": "Faible",
+    "weight": 3,
+    "category": "Démarrage automatique",
+    "title": "Crée des tâches planifiées",
+    "explanation": "Une tâche planifiée lance un programme ou un script à une heure donnée ou au démarrage.",
+    "minDistinct": 1,
+    "groups": [
+      "schtasks(\\.exe)?\"?\\s+/create|Register-ScheduledTask|New-ScheduledTask|ITaskService|TaskScheduler"
+    ]
+  },
+  {
+    "id": "anti_debug",
+    "severity": "Faible",
+    "weight": 3,
+    "category": "Dissimulation",
+    "title": "Détecte les débogueurs",
+    "explanation": "Le programme vérifie si on l'étudie avec un débogueur. Courant dans les logiciels protégés contre le piratage, et dans les malwares.",
+    "minDistinct": 1,
+    "groups": [
+      "CheckRemoteDebuggerPresent|Debugger::get_IsAttached|ZwSetInformationThread|NtSetInformationThread[^\\n]{0,30}HideFromDebugger"
+    ]
+  },
+  {
+    "id": "ip_lookup",
+    "severity": "Faible",
+    "weight": 4,
+    "category": "Réseau",
+    "title": "Cherche votre adresse IP publique / localisation",
+    "explanation": "Le programme interroge un service qui donne l'adresse IP publique et le pays. Les voleurs de données le font pour « ficher » la victime.",
+    "minDistinct": 1,
+    "groups": [
+      "api\\.ipify\\.org|ip-api\\.com|ipinfo\\.io|icanhazip\\.com|checkip\\.amazonaws\\.com|wtfismyip\\.com|myexternalip\\.com|ifconfig\\.me|geoplugin\\.net|ipwho\\.is|freegeoip"
+    ]
+  },
+  {
+    "id": "screenshot",
+    "severity": "Faible",
+    "weight": 3,
+    "category": "Vol de données",
+    "title": "Peut faire des captures d'écran",
+    "explanation": "Le programme sait copier le contenu de l'écran.",
+    "minDistinct": 1,
+    "groups": [
+      "CopyFromScreen|ImageGrab\\.grab|pyautogui\\.screenshot|\\bmss\\b[^\\n]{0,20}grab"
+    ]
+  },
+  {
+    "id": "sysinfo",
+    "severity": "Faible",
+    "weight": 2,
+    "category": "Vol de données",
+    "title": "Collecte beaucoup d'informations sur le PC",
+    "explanation": "Matériel, système, identifiant de la machine… Normal pour un outil de diagnostic, et aussi pour un malware qui « fiche » la victime.",
+    "minDistinct": 4,
+    "groups": [
+      "Win32_ComputerSystem|Win32_Processor|Win32_VideoController|Win32_OperatingSystem|Win32_BIOS|Win32_DiskDrive|MachineGuid|\\bHWID\\b|ProcessorId|Win32_NetworkAdapter|Win32_BaseBoard|AntiVirusProduct"
+    ]
+  },
+  {
+    "id": "firewall",
+    "severity": "Faible",
+    "weight": 3,
+    "category": "Modifie le système",
+    "title": "Modifie le pare-feu",
+    "explanation": "Le programme peut ajouter des règles ou désactiver le pare-feu Windows.",
+    "minDistinct": 1,
+    "groups": [
+      "netsh(\\.exe)?\\s+(adv)?firewall|New-NetFirewallRule|Set-NetFirewallProfile|INetFwPolicy2"
+    ]
+  },
+  {
+    "id": "registry_write",
+    "severity": "Info",
+    "weight": 1,
+    "category": "Modifie le système",
+    "title": "Écrit dans le registre",
+    "explanation": "Beaucoup de programmes le font (réglages, désinstallation). Ce n'est grave que combiné à d'autres signaux.",
+    "minDistinct": 1,
+    "groups": [
+      "RegSetValueEx(A|W)?\\b|RegistryKey::SetValue|reg(\\.exe)?\\s+add\\s|New-ItemProperty|Set-ItemProperty|winreg\\.SetValue"
+    ]
+  },
+  {
+    "id": "process_kill",
+    "severity": "Info",
+    "weight": 1,
+    "category": "Modifie le système",
+    "title": "Peut fermer d'autres programmes",
+    "explanation": "Fonction courante (gestionnaire de tâches, optimiseur…).",
+    "minDistinct": 1,
+    "groups": [
+      "TerminateProcess|Process::Kill|taskkill(\\.exe)?\\s"
+    ]
+  }
+]
